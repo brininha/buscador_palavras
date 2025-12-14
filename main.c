@@ -39,7 +39,7 @@ typedef struct {
 // funcoes auxiliares
 char* processar_palavra(char* crua);
 void adicionar_linha(NoLinha **raiz, int linha);
-void carregar_arquivo(char *nomeArquivo, TextoMemoria *texto, void **indice, char tipoIndice, int *comp);
+void carregar_arquivo(char *nomeArquivo, TextoMemoria *texto, void **indice, char *tipoIndice, int *comp);
 
 // funcoes para lista
 void inserir_lista(NoLista **inicio, char *palavra, int linha, int *comp);
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 
     // validacao dos argumentos
     if (argc != 3) {
-        printf("Uso: %s <arquivo_texto> <tipo_indice (lista|arvore)>\n", argv[0]);
+        printf("Quantidade de argumentos incorreta!");
         return 1;
     }
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     
     // validar se o tipo eh "lista" ou "arvore"
     if (strcmp(tipoIndice, "lista") != 0 && strcmp(tipoIndice, "arvore") != 0) {
-        printf("Erro: O tipo de indice deve ser 'lista' ou 'arvore'.\n");
+        printf("O tipo de indice deve ser 'lista' ou 'arvore'.\n");
         return 1;
     }
 
@@ -86,17 +86,7 @@ int main(int argc, char *argv[]) {
     // a logica de leitura deve estar aqui ou numa função separada
 
     // simulacao da chamada da funcao:
-    // carregar_arquivo(nomeArquivo, &texto, (strcmp(tipoIndice, "lista") == 0) ? (void*)&indiceLista : (void*)&indiceArvore, ...);
-    
-    // TODO: Implementar leitura do arquivo
-    // Ao ler o arquivo:
-    //   1. Guarde a linha crua em 'texto.linhas'
-    //   2. Percorra a linha caractere por caractere
-    //   3. Monte as palavras, converta para minúsculo, remova pontuação
-    //   4. Se tipoIndice == "lista" -> inserir_lista(...)
-    //   5. Se tipoIndice == "arvore" -> inserir_arvore(...)
-    //   6. Incremente 'comparacoesConstrucao' a cada comparação feita na inserção
-    
+    carregar_arquivo(nomeArquivo, &texto, (strcmp(tipoIndice, "lista") == 0) ? (void*)&indiceLista : (void*)&indiceArvore, tipoIndice, (void*)&comparacoesConstrucao);
     
     // exibicao das estatisticas iniciais
     printf("Arquivo: '%s'\n", nomeArquivo);
@@ -132,12 +122,12 @@ int main(int argc, char *argv[]) {
         else if (strcmp(comando, "busca") == 0) {
             scanf("%s", palavraBusca);
             
-            // TODO: Normalizar palavraBusca (minúsculas) antes de buscar [cite: 63]
+            // TODO: normalizar palavraBusca (minúsculas) antes de buscar
             int compBusca = 0;
             NoLinha *resultadoLinhas = NULL;
             int totalOcorrencias = 0;
 
-            // Executar busca
+            // executar busca
             if (strcmp(tipoIndice, "lista") == 0) {
                 NoLista *res = buscar_lista(indiceLista, palavraBusca, &compBusca);
                 if (res) {
@@ -173,21 +163,86 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // TODO: Liberar memória alocada (Texto, Índice e Listas de Linhas)
+    // TODO: Liberar memória alocada (texto, indice e listas de linhas)
 
     return 0;
 }
 
 // implementacao das funcoes (para codificarmos)
 
+void carregar_arquivo(char *nomeArquivo, TextoMemoria *texto, void **indice, char *tipoIndice, int *comp) {
+    FILE *pont_arq;
+    pont_arq = fopen(nomeArquivo, "r");
+
+    if (pont_arq == NULL) {
+        printf("Erro ao abrir o arquivo!");
+        return 1;
+    }
+
+    char buffer[2000]; // buffer temporario para ler cada linha
+
+    // para aumentar o tamanho se o texto estiver cheio
+    while (fgets(buffer, sizeof(buffer), pont_arq) != NULL) {
+        if (texto->totalLinhas == texto->capacidade) {
+            if (texto->capacidade == 0) texto->capacidade = 10;
+            texto->capacidade *= 2;
+        }
+
+        texto->linhas[texto->totalLinhas] = strdup(buffer);
+        int linhaAtual = texto->totalLinhas + 1;
+        texto->totalLinhas++;
+
+        
+    char palavraTemp[200]; // Buffer para montar uma palavra
+        int p = 0; // Índice do buffer da palavra
+
+        // Percorre cada caractere da linha que acabamos de ler
+        for (int i = 0; buffer[i] != '\0'; i++) {
+            char c = buffer[i];
+
+            // Se for letra ou número, adiciona ao buffer da palavra
+            if (isalnum(c)) {
+                palavraTemp[p++] = tolower(c); // Converte para minúscula aqui mesmo [cite: 63]
+            } 
+            // Se for separador (espaço, pontuação, hífen[cite: 61], quebra de linha)
+            // E se já tivermos acumulado alguma palavra no buffer
+            else if (p > 0) {
+                palavraTemp[p] = '\0'; // Finaliza a string da palavra
+
+                // --- ETAPA 3: Inserir no Índice ---
+                if (strcmp(tipoIndice, "lista") == 0) {
+                    // Cast explicito: (NoLista**) diz que o void** é na verdade um ponteiro de lista
+                    inserirLista((NoLista**)indice, palavraTemp, linhaAtual, comp);
+                } else {
+                    inserirArvore((NoArvore**)indice, palavraTemp, linhaAtual, comp);
+                }
+
+                p = 0; // Reseta o buffer para a próxima palavra
+            }
+        }
+        
+        // Caso a linha termine com uma palavra sem pontuação depois (raro com fgets, mas possível)
+        if (p > 0) {
+            palavraTemp[p] = '\0';
+            if (strcmp(tipoIndice, "lista") == 0) {
+                inserirLista((NoLista**)indice, palavraTemp, linhaAtual, comp);
+            } else {
+                inserirArvore((NoArvore**)indice, palavraTemp, linhaAtual, comp);
+            }
+        }
+    }
+
+    fclose(pont_arq);
+}
+
 void inserir_lista(NoLista **inicio, char *palavra, int linha, int *comp) {
-    // TODO: Implementar inserção na lista
-    // Lembre-se de incrementar *comp a cada strcmp realizado
+    // TODO: implementar inserção na lista
+    // lembre-se de incrementar *comp a cada strcmp realizado
 }
 
 void inserir_arvore(NoArvore **raiz, char *palavra, int linha, int *comp) {
-    // TODO: Implementar inserção na árvore BST
-    // Use strcasecmp ou strcmp (se já estiver minúsculo) e incremente *comp
+    // TODO: implementar inserção na árvore BST
+    // use strcasecmp ou strcmp (se já estiver minúsculo) e incremente *comp
 }
 
 // adicionar as demais funcoes aqui
