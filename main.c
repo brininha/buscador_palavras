@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
     int comparacoesConstrucao = 0; 
 
     void *ptrIndice = (strcmp(tipoIndice, "lista") == 0) ? (void*)&indiceLista : (void*)&indiceArvore;
+    
     carregar_arquivo(nomeArquivo, &texto, ptrIndice, tipoIndice, &comparacoesConstrucao);
 
     // imprimindo infos do arquivo
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
     
     printf("Numero de comparacoes realizadas para a construcao do indice: %d\n", comparacoesConstrucao);
 
-    // aqui comeca a logica de busca
+    // aqui comeca a logica de busca das palavras
     char comando[100];
     char palavraBusca[100];
     
@@ -126,7 +127,7 @@ int main(int argc, char *argv[]) {
         } 
         else if (strcmp(comando, "busca") == 0) {
             scanf("%s", palavraBusca);
-            // deixando a palavra em minusculas pra nao ter erro
+            // deixando a palavra em minusculas pra nao ser case sensitive (lembrar de mencionar isso no relatorio)
             for(int i = 0; palavraBusca[i]; i++) {
                 palavraBusca[i] = tolower(palavraBusca[i]);
             }
@@ -160,7 +161,7 @@ int main(int argc, char *argv[]) {
             } else {
                 printf("Palavra '%s' nao encontrada.\n", palavraBusca);
             }
-            printf("Numero de comparacoes: %d\n", compBusca);
+            printf("Numero de comparacoes: %d\n", compBusca); // isso aqui vai ser util na analise assintotica
 
         } else {
             char lixo[100]; fgets(lixo, 100, stdin);
@@ -230,9 +231,9 @@ void carregar_arquivo(char *nomeArquivo, TextoMemoria *texto, void *indice, char
         int p = 0;
         
         for (int i = 0; buffer[i] != '\0'; i++) {
-            char c = buffer[i];
+            unsigned char c = (unsigned char)buffer[i];
             
-            if (isalnum(c)) {
+            if (isalnum(c) || c > 127) {
                 palavraTemp[p++] = tolower(c); 
             } 
             else if (p > 0) {
