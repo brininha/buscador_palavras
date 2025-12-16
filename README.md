@@ -71,4 +71,4 @@ Numero de comparacoes: 12
 ---
 
 ## Autoria
-Esse programa foi desenvolvido por [Manuela Campos de Amorim](github.com/manuolivercam) e [Sabrina Cristan](github.com/brininha).
+Esse programa foi desenvolvido por [Manuela Campos de Amorim](https://github.com/manuolivercam) e [Sabrina Cristan](https://github.com/brininha).
