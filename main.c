@@ -3,99 +3,118 @@
 #include <string.h>
 #include <ctype.h>
 
-// definicao das estruturas de dados que vamos usar
-
-// estrutura para armazenar as linhas onde a palavra ocorre (lista ligada simples)
 typedef struct NoLinha {
-    int numeroLinha;
-    struct NoLinha *prox;
+    int numeroLinha;      
+    struct NoLinha *prox; 
 } NoLinha;
 
-// estrutura para o indice (lista ligada)
-typedef struct NoLista {
-    char *palavra;
-    int ocorrencias;
-    NoLinha *listaLinhas; // ponteiro para a lista de linhas acima
-    struct NoLista *prox;
-} NoLista;
+typedef struct {
+    char *palavra;        
+    int ocorrencias;     
+    NoLinha *listaLinhas; 
+} ItemIndice;
 
-// estrutura para o indice (arvore binaria de busca)
+typedef struct {
+    ItemIndice *itens; 
+    int qtd;           
+    int capacidade;    
+} ListaSequencial;
+
 typedef struct NoArvore {
     char *palavra;
     int ocorrencias;
     NoLinha *listaLinhas;
-    struct NoArvore *esq;
-    struct NoArvore *dir;
+    struct NoArvore *esq; 
+    struct NoArvore *dir; 
 } NoArvore;
 
-// estrutura para armazenar o texto original
 typedef struct {
-    char **linhas;  // array de strings
-    int totalLinhas;
-    int capacidade; // para redimensionamento, se preciso
+    char **linhas;   
+    int totalLinhas; 
+    int capacidade;  
 } TextoMemoria;
 
-
-// funcoes auxiliares
-char* processar_palavra(char* crua);
 void adicionar_linha(NoLinha **raiz, int linha);
-void carregar_arquivo(char *nomeArquivo, TextoMemoria *texto, void **indice, char *tipoIndice, int *comp);
+void carregar_arquivo(char *nomeArquivo, TextoMemoria *texto, void *indice, char *tipoIndice, int *comp);
 
-// funcoes para lista
-void inserir_lista(NoLista **inicio, char *palavra, int linha, int *comp);
-NoLista* buscar_lista(NoLista *inicio, char *palavra, int *comp);
-void liberar_lista(NoLista *inicio);
 
-// funcoes para arvore
+void inicializar_lista(ListaSequencial *lista);
+void inserir_lista(ListaSequencial *lista, char *palavra, int linha, int *comp);
+ItemIndice* buscar_lista(ListaSequencial *lista, char *palavra, int *comp);
+void liberar_lista(ListaSequencial *lista);
+int contar_palavras_unicas_lista(ListaSequencial *lista);
+
+
 void inserir_arvore(NoArvore **raiz, char *palavra, int linha, int *comp);
 NoArvore* buscar_arvore(NoArvore *raiz, char *palavra, int *comp);
 int altura_arvore(NoArvore *raiz);
 void liberar_arvore(NoArvore *raiz);
-int contar_palavras_unicas_arvore(NoArvore *raiz); // auxiliar para estatisticas
-int contar_palavras_unicas_lista(NoLista *inicio);
+int contar_palavras_unicas_arvore(NoArvore *raiz);
+
+void adicionar_linha(NoLinha **raiz, int linha) {
+    
+    if (*raiz == NULL) {
+        NoLinha *novoNo = (NoLinha *) malloc(sizeof(NoLinha));
+        novoNo->numeroLinha = linha;
+        novoNo->prox = NULL;
+        *raiz = novoNo;
+        return;
+    }
+
+    NoLinha *aux = *raiz;
+    
+    while (aux->prox != NULL) {
+    
+        if (aux->numeroLinha == linha) return;
+        aux = aux->prox;
+    }
+    if (aux->numeroLinha == linha) return;
+
+    NoLinha *novoNo = (NoLinha *) malloc(sizeof(NoLinha));
+    novoNo->numeroLinha = linha;
+    novoNo->prox = NULL;
+    aux->prox = novoNo;
+}
 
 int main(int argc, char *argv[]) {
 
-    // validacao dos argumentos
     if (argc != 3) {
-        printf("Quantidade de argumentos incorreta!");
+        printf("Uso: %s <arquivo> <tipo_indice>\n", argv[0]);
         return 1;
     }
 
     char *nomeArquivo = argv[1];
     char *tipoIndice = argv[2];
     
-    // validar se o tipo eh "lista" ou "arvore"
     if (strcmp(tipoIndice, "lista") != 0 && strcmp(tipoIndice, "arvore") != 0) {
         printf("O tipo de indice deve ser 'lista' ou 'arvore'.\n");
         return 1;
     }
 
-    // inicializacao das estruturas
     TextoMemoria texto;
-    texto.linhas = NULL; // inicialize adequadamente (malloc)
+    texto.linhas = malloc(10 * sizeof(char*)); 
     texto.totalLinhas = 0;
-    texto.capacidade = 0;
+    texto.capacidade = 10;
     
-    NoLista *indiceLista = NULL;
+    ListaSequencial indiceLista; 
     NoArvore *indiceArvore = NULL;
-
-    int comparacoesConstrucao = 0;
-
-    // carregamento do arquivo e construcao do indice
-    // a logica de leitura deve estar aqui ou numa função separada
-
-    // simulacao da chamada da funcao:
-    carregar_arquivo(nomeArquivo, &texto, (strcmp(tipoIndice, "lista") == 0) ? (void*)&indiceLista : (void*)&indiceArvore, tipoIndice, (void*)&comparacoesConstrucao);
     
-    // exibicao das estatisticas iniciais
+    if (strcmp(tipoIndice, "lista") == 0) {
+        inicializar_lista(&indiceLista);
+    }
+
+    int comparacoesConstrucao = 0; 
+
+    void *ptrIndice = (strcmp(tipoIndice, "lista") == 0) ? (void*)&indiceLista : (void*)&indiceArvore;
+    carregar_arquivo(nomeArquivo, &texto, ptrIndice, tipoIndice, &comparacoesConstrucao);
+
     printf("Arquivo: '%s'\n", nomeArquivo);
     printf("Tipo de indice: '%s'\n", tipoIndice);
-    printf("Numero de linhas no arquivo: %d\n", texto.totalLinhas); // atualizar com valor real
+    printf("Numero de linhas no arquivo: %d\n", texto.totalLinhas);
     
     int totalPalavras = 0;
     if (strcmp(tipoIndice, "lista") == 0) 
-        totalPalavras = contar_palavras_unicas_lista(indiceLista);
+        totalPalavras = contar_palavras_unicas_lista(&indiceLista);
     else 
         totalPalavras = contar_palavras_unicas_arvore(indiceArvore);
 
@@ -107,14 +126,12 @@ int main(int argc, char *argv[]) {
     
     printf("Numero de comparacoes realizadas para a construcao do indice: %d\n", comparacoesConstrucao);
 
-
-    // loop de busca
     char comando[100];
     char palavraBusca[100];
     
     while (1) {
         printf("> ");
-        scanf("%s", comando);
+        scanf("%s", comando); 
 
         if (strcmp(comando, "fim") == 0) {
             break;
@@ -122,14 +139,16 @@ int main(int argc, char *argv[]) {
         else if (strcmp(comando, "busca") == 0) {
             scanf("%s", palavraBusca);
             
-            // TODO: normalizar palavraBusca (minúsculas) antes de buscar
-            int compBusca = 0;
+            for(int i = 0; palavraBusca[i]; i++) {
+                palavraBusca[i] = tolower(palavraBusca[i]);
+            }
+
+            int compBusca = 0; 
             NoLinha *resultadoLinhas = NULL;
             int totalOcorrencias = 0;
 
-            // executar busca
             if (strcmp(tipoIndice, "lista") == 0) {
-                NoLista *res = buscar_lista(indiceLista, palavraBusca, &compBusca);
+                ItemIndice *res = buscar_lista(&indiceLista, palavraBusca, &compBusca);
                 if (res) {
                     resultadoLinhas = res->listaLinhas;
                     totalOcorrencias = res->ocorrencias;
@@ -142,10 +161,8 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            // exibir resultados
             if (resultadoLinhas) {
                 printf("Existem %d ocorrências da palavra '%s' na(s) seguinte(s) linha(s):\n", totalOcorrencias, palavraBusca);
-                
                 NoLinha *atual = resultadoLinhas;
                 while (atual != NULL) {
                     printf("%05d: %s", atual->numeroLinha, texto.linhas[atual->numeroLinha - 1]); 
@@ -157,92 +174,221 @@ int main(int argc, char *argv[]) {
             printf("Numero de comparacoes: %d\n", compBusca);
 
         } else {
-            // consumir o resto da linha se comando for inválido
             char lixo[100]; fgets(lixo, 100, stdin);
             printf("Opcao invalida!\n");
         }
     }
-
-    // TODO: Liberar memória alocada (texto, indice e listas de linhas)
+    if (strcmp(tipoIndice, "lista") == 0) {
+        liberar_lista(&indiceLista);
+    } else {
+        liberar_arvore(indiceArvore);
+    }
+    
+    for (int i = 0; i < texto.totalLinhas; i++) {
+        free(texto.linhas[i]);
+    }
+    free(texto.linhas);
 
     return 0;
 }
-
-// implementacao das funcoes (para codificarmos)
-
-void carregar_arquivo(char *nomeArquivo, TextoMemoria *texto, void **indice, char *tipoIndice, int *comp) {
-    FILE *pont_arq;
-    pont_arq = fopen(nomeArquivo, "r");
-
+void inicializar_lista(ListaSequencial *lista) {
+    lista->qtd = 0;
+    lista->capacidade = 50; 
+    lista->itens = (ItemIndice *) malloc(lista->capacidade * sizeof(ItemIndice));
+}
+void carregar_arquivo(char *nomeArquivo, TextoMemoria *texto, void *indice, char *tipoIndice, int *comp) {
+    FILE *pont_arq = fopen(nomeArquivo, "r");
     if (pont_arq == NULL) {
-        printf("Erro ao abrir o arquivo!");
-        return 1;
+        printf("Erro ao abrir arquivo!\n");
+        exit(1); 
     }
 
-    char buffer[2000]; // buffer temporario para ler cada linha
+    char buffer[2000]; 
 
-    // para aumentar o tamanho se o texto estiver cheio
     while (fgets(buffer, sizeof(buffer), pont_arq) != NULL) {
-        if (texto->totalLinhas == texto->capacidade) {
-            if (texto->capacidade == 0) texto->capacidade = 10;
-            texto->capacidade *= 2;
+        
+        if (texto->totalLinhas >= texto->capacidade) {
+             texto->capacidade *= 2;
+             texto->linhas = realloc(texto->linhas, texto->capacidade * sizeof(char*));
         }
-
         texto->linhas[texto->totalLinhas] = strdup(buffer);
         int linhaAtual = texto->totalLinhas + 1;
         texto->totalLinhas++;
 
+        char palavraTemp[200];
+        int p = 0;
         
-    char palavraTemp[200]; // Buffer para montar uma palavra
-        int p = 0; // Índice do buffer da palavra
-
-        // Percorre cada caractere da linha que acabamos de ler
         for (int i = 0; buffer[i] != '\0'; i++) {
             char c = buffer[i];
-
-            // Se for letra ou número, adiciona ao buffer da palavra
+            
             if (isalnum(c)) {
-                palavraTemp[p++] = tolower(c); // Converte para minúscula aqui mesmo [cite: 63]
+                palavraTemp[p++] = tolower(c); 
             } 
-            // Se for separador (espaço, pontuação, hífen[cite: 61], quebra de linha)
-            // E se já tivermos acumulado alguma palavra no buffer
             else if (p > 0) {
-                palavraTemp[p] = '\0'; // Finaliza a string da palavra
-
-                // --- ETAPA 3: Inserir no Índice ---
+                palavraTemp[p] = '\0'; 
                 if (strcmp(tipoIndice, "lista") == 0) {
-                    // Cast explicito: (NoLista**) diz que o void** é na verdade um ponteiro de lista
-                    inserirLista((NoLista**)indice, palavraTemp, linhaAtual, comp);
+                    inserir_lista((ListaSequencial*)indice, palavraTemp, linhaAtual, comp);
                 } else {
-                    inserirArvore((NoArvore**)indice, palavraTemp, linhaAtual, comp);
+                    inserir_arvore((NoArvore**)indice, palavraTemp, linhaAtual, comp);
                 }
-
-                p = 0; // Reseta o buffer para a próxima palavra
+                p = 0; 
             }
         }
         
-        // Caso a linha termine com uma palavra sem pontuação depois (raro com fgets, mas possível)
         if (p > 0) {
             palavraTemp[p] = '\0';
             if (strcmp(tipoIndice, "lista") == 0) {
-                inserirLista((NoLista**)indice, palavraTemp, linhaAtual, comp);
+                inserir_lista((ListaSequencial*)indice, palavraTemp, linhaAtual, comp);
             } else {
-                inserirArvore((NoArvore**)indice, palavraTemp, linhaAtual, comp);
+                inserir_arvore((NoArvore**)indice, palavraTemp, linhaAtual, comp);
             }
         }
     }
-
     fclose(pont_arq);
 }
 
-void inserir_lista(NoLista **inicio, char *palavra, int linha, int *comp) {
-    // TODO: implementar inserção na lista
-    // lembre-se de incrementar *comp a cada strcmp realizado
+void inserir_lista(ListaSequencial *lista, char *palavra, int linha, int *comp) {
+
+    for (int i = 0; i < lista->qtd; i++) {
+        (*comp)++; 
+
+        if (strcmp(lista->itens[i].palavra, palavra) == 0) {
+            lista->itens[i].ocorrencias++; 
+            adicionar_linha(&(lista->itens[i].listaLinhas), linha); 
+            return;
+        }
+    }
+
+    if (lista->qtd == lista->capacidade) {
+        lista->capacidade *= 2; 
+        ItemIndice *temp = realloc(lista->itens, lista->capacidade * sizeof(ItemIndice));
+        if (temp == NULL) {
+            printf("Erro de memoria!\n");
+            exit(1);
+        }
+        lista->itens = temp;
+    }
+
+    lista->itens[lista->qtd].palavra = strdup(palavra); 
+    lista->itens[lista->qtd].ocorrencias = 1;
+    lista->itens[lista->qtd].listaLinhas = NULL;
+
+    adicionar_linha(&(lista->itens[lista->qtd].listaLinhas), linha);
+
+    lista->qtd++;
+}
+ItemIndice* buscar_lista(ListaSequencial *lista, char *palavra, int *comp) {
+    for (int i = 0; i < lista->qtd; i++){
+        (*comp)++;
+        
+        if (strcmp(lista->itens[i].palavra, palavra) == 0){
+            return &lista->itens[i];
+        }
+    }
+    return NULL;
+}
+int contar_palavras_unicas_lista(ListaSequencial *lista) {
+    return lista->qtd; 
+}
+
+void liberar_lista(ListaSequencial *lista) {
+    for (int i = 0; i < lista->qtd; i++) {
+        free(lista->itens[i].palavra);
+        
+        NoLinha *atual = lista->itens[i].listaLinhas;
+        while (atual != NULL) {
+            NoLinha *temp = atual;
+            atual = atual->prox;
+            free(temp);
+        }
+    }
+    free(lista->itens);
 }
 
 void inserir_arvore(NoArvore **raiz, char *palavra, int linha, int *comp) {
-    // TODO: implementar inserção na árvore BST
-    // use strcasecmp ou strcmp (se já estiver minúsculo) e incremente *comp
+    if (*raiz == NULL) {
+        *raiz = (NoArvore*) malloc(sizeof(NoArvore));
+        (*raiz)->palavra = strdup(palavra);
+        (*raiz)->ocorrencias = 1;
+        (*raiz)->dir = NULL;
+        (*raiz)->esq = NULL;
+        (*raiz)->listaLinhas = NULL;
+        adicionar_linha(&((*raiz)->listaLinhas), linha);
+        return;
+    }
+
+    (*comp)++;
+
+    if (strcmp(palavra, (*raiz)->palavra) == 0) {
+        (*raiz)->ocorrencias++;
+        adicionar_linha(&((*raiz)->listaLinhas), linha);
+    } else if (strcmp(palavra, (*raiz)->palavra) < 0) {
+        inserir_arvore(&((*raiz)->esq), palavra, linha, comp);
+    } else if (strcmp(palavra, (*raiz)->palavra) > 0) {
+        inserir_arvore(&((*raiz)->dir), palavra, linha, comp);
+    }
 }
 
-// adicionar as demais funcoes aqui
+NoArvore* buscar_arvore(NoArvore *raiz, char *palavra, int *comp) {
+    if (raiz == NULL)
+    {
+        return NULL;
+    }
+    (*comp)++;
+    if (strcmp(palavra, raiz->palavra) == 0)
+    {
+        return raiz;
+    }
+    else if (strcmp(palavra, raiz->palavra) < 0)
+    {
+        return buscar_arvore(raiz->esq, palavra, comp);
+    }
+    else 
+    {
+        return buscar_arvore(raiz->dir, palavra, comp);
+    }
+}
+
+int altura_arvore(NoArvore *raiz) {
+    if (raiz == NULL) {
+        return -1;
+    }
+
+    int h_esq = altura_arvore(raiz->esq);
+    int h_dir = altura_arvore(raiz->dir);
+
+    if (h_esq > h_dir) {
+        return 1 + h_esq;
+    } else {
+        return 1 + h_dir;
+    }
+}
+
+int contar_palavras_unicas_arvore(NoArvore *raiz) {
+    if (raiz == NULL)
+    {
+        return 0;
+    }
+    int resultadoEsq = contar_palavras_unicas_arvore(raiz->esq);
+    int resultadoDir = contar_palavras_unicas_arvore(raiz->dir);
+
+    return 1 + resultadoEsq + resultadoDir;
+}
+
+void liberar_arvore(NoArvore *raiz) {
+    if (raiz == NULL) {
+        return;
+    }
+    liberar_arvore(raiz->esq);
+    liberar_arvore(raiz->dir);
+
+    free(raiz->palavra);
+
+    NoLinha *pontAux = raiz->listaLinhas;
+    while (pontAux != NULL) {
+        NoLinha *temp = pontAux->prox;
+        free(pontAux);
+        pontAux = temp;
+    }
+    free(raiz);
+}
