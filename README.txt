@@ -1,3 +1,7 @@
+Integrantes: 
+Manuela Campos de Amorim | NUSP: 16887191
+Sabrina Cristan | NUSP: 16837632
+
 Instruções de como rodar o EP (você também pode acessar o arquivo README.md que está mais formatado):
 
 1. Compilação
