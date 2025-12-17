@@ -1,8 +1,10 @@
-# Indexador e buscador de palavras
+<div align="center">
+<img width="200" alt="ilustracao" src="https://github.com/user-attachments/assets/c970ea4c-d533-48e7-8176-96aebebb6e99" />
+</div>
+
+<h1 align="center"> Indexador e buscador de palavras </h1>
 
 Disciplina: Algoritmos e Estruturas de Dados I  
-
----
 
 ## Sobre o projeto
 Este projeto implementa um sistema de indexação e busca de palavras em arquivos de texto, desenvolvido em linguagem C. O objetivo principal é analisar e comparar o desempenho entre duas estruturas de dados distintas:
@@ -12,14 +14,10 @@ Este projeto implementa um sistema de indexação e busca de palavras em arquivo
 
 O sistema calcula o número de comparações realizadas tanto na construção do índice quanto na busca de termos, permitindo validar as complexidades teóricas $O(n)$ e $O(\log n)$.
 
----
-
 ## Funcionalidades
 * **Indexação de textos:** leitura de arquivos `.txt` e criação de índices em memória.
 * **Busca interativa:** interface via terminal para buscar palavras e visualizar as linhas onde ocorrem.
 * **Métricas de desempenho:** relatório imediato do número de comparações realizadas a cada operação.
-
----
 
 ## Como compilar
 
@@ -28,8 +26,6 @@ Para compilar o projeto, certifique-se de ter o compilador `gcc` instalado. Exec
 ```
 gcc main.c -o ep
 ``` 
-
----
 
 ## Como executar
 
@@ -46,8 +42,6 @@ O programa deve ser executado via linha de comando, recebendo dois argumentos ob
 ```
 ./ep amostras/texto1.txt lista
 ```
-
----
 
 ## Interações
 
@@ -68,7 +62,6 @@ Numero de comparacoes: 12
 
 > fim
 ```
----
 
 ## Autoria
 Esse programa foi desenvolvido por [Manuela Campos de Amorim](https://github.com/manuolivercam) e [Sabrina Cristan](https://github.com/brininha).
